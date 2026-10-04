@@ -47,8 +47,26 @@
     .today-card h2 { margin: 7px 0 3px; font-family: "Kaiti TC", "BiauKai", "DFKai-SB", "KaiTi", serif; font-size: 24px; line-height: 1.35; }
     .today-card p { margin: 0; color: var(--muted); font-size: 15px; }
     .today-time { color: var(--clay); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .vote-card { margin: 0 0 24px; padding: 18px; border: 1px solid var(--line); border-radius: 18px 14px 20px 14px; background: var(--card); box-shadow: var(--shadow); }
+    .vote-card h2 { margin: 7px 0 12px; font-family: "Kaiti TC", "BiauKai", "DFKai-SB", "KaiTi", serif; font-size: 24px; line-height: 1.35; }
+    .vote-form { display: grid; gap: 12px; }
+    .vote-form label, .vote-options legend { color: var(--green); font-size: 14px; font-weight: 750; }
+    .vote-form input[type="text"] { display: block; width: 100%; margin-top: 5px; padding: 9px 11px; border: 1px solid #d8cbbc; border-radius: 10px; background: #fffefa; color: var(--ink); font: inherit; }
+    .vote-options { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+    .vote-options label { display: flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 500; }
+    .vote-options input { accent-color: var(--green); }
+    .vote-submit { justify-self: start; border: 0; border-radius: 999px; padding: 8px 16px; background: var(--green); color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
+    .vote-submit:disabled { opacity: .6; cursor: wait; }
+    .vote-status { min-height: 1.5em; margin: 0; color: var(--muted); font-size: 14px; }
+    .vote-results { margin-top: 15px; padding-top: 12px; border-top: 1px dashed var(--line); }
+    .vote-results h3 { margin: 0 0 6px; color: var(--green); font-size: 16px; }
+    .vote-results ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+    .vote-results li { display: flex; justify-content: space-between; color: var(--muted); font-size: 15px; }
     .note { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 24px; padding: 13px 15px; border: 1px solid #ead5c7; border-radius: 14px; background: #fff7ef; color: #754c3d; font-size: 14px; line-height: 1.55; }
     .note strong { white-space: nowrap; }
+    .day-switch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+    .day-switch button { border: 1px solid #d8cbbc; border-radius: 999px; padding: 6px 12px; background: var(--card); color: var(--green); font: inherit; cursor: pointer; }
+    .day-switch button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
     .day { margin-top: 24px; }
     .day-heading { display: flex; align-items: center; gap: 12px; margin: 0 2px 13px; }
     .day-number { display: grid; width: 43px; height: 43px; flex: 0 0 43px; place-items: center; border-radius: 14px; background: var(--green); color: white; font-size: 14px; font-weight: 800; letter-spacing: .06em; }
@@ -64,7 +82,10 @@
     .timeline-item:last-child .timeline-mark::before { display: none; }
     .timeline-mark::after { position: relative; z-index: 1; width: 11px; height: 11px; margin-top: 7px; border: 2px solid var(--paper); border-radius: 50%; background: var(--clay); box-shadow: 0 0 0 1px #c98d69; content: ""; }
     .timeline-content { min-width: 0; padding: 0 0 0 11px; }
-    .timeline-content h3 { margin: 0 0 3px; font-size: 18px; line-height: 1.4; }
+    .timeline-content h3 { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin: 0 0 3px; font-size: 18px; line-height: 1.4; }
+    .stop-check { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+    .stop-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--green); }
+    .timeline-item.is-done .timeline-content h3 { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
     .timeline-content p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
     .timeline-content .tip { margin-top: 9px; padding: 6px 9px; border-left: 2px solid #d5a17b; border-radius: 0 8px 8px 0; background: #f7eee2; color: #735a49; font-size: 14px; line-height: 1.5; }
     .tip strong { color: #9a573e; font-weight: 750; }
@@ -99,37 +120,70 @@
 
     <aside class="today-card" aria-label="今天的第一站">
       <div class="today-label">✎ 今天先去哪</div>
-      <h2><span class="today-time">10:30</span>　富盛號</h2>
+      <h2><span class="today-time">10:30</span>　<span class="today-name">富盛號</span></h2>
       <p>中西區民族路三段11號　／　來碗台南傳統碗粿，從老味道開始。</p>
     </aside>
+
+    <section class="vote-card" aria-labelledby="dinner-vote-title">
+      <div class="today-label">✎ 晚餐投票</div>
+      <h2 id="dinner-vote-title">今晚想吃什麼？</h2>
+      <form class="vote-form" id="vote-form">
+        <label for="vote-nickname">暱稱
+          <input id="vote-nickname" name="nickname" type="text" maxlength="30" required placeholder="輸入你的暱稱">
+        </label>
+        <fieldset class="vote-options">
+          <legend>選一個晚餐</legend>
+          <label><input type="radio" name="choice" value="牛肉湯" required>牛肉湯</label>
+          <label><input type="radio" name="choice" value="海鮮粥">海鮮粥</label>
+          <label><input type="radio" name="choice" value="素食餐">素食餐</label>
+        </fieldset>
+        <button class="vote-submit" type="submit">送出投票</button>
+        <p class="vote-status" id="vote-status" role="status" aria-live="polite"></p>
+      </form>
+      <div class="vote-results" aria-live="polite">
+        <h3>目前票數</h3>
+        <ul id="vote-results-list">
+          <li><span>牛肉湯</span><strong>—</strong></li>
+          <li><span>海鮮粥</span><strong>—</strong></li>
+          <li><span>素食餐</span><strong>—</strong></li>
+        </ul>
+      </div>
+    </section>
 
     <aside class="note" aria-label="行程提醒">
       <strong>出發前提醒</strong>
       <span>店家營業時間可能調整，建議出發前再確認官方公告。</span>
     </aside>
 
-    <section class="day" aria-labelledby="day-one">
+    <div class="day-switch" role="group" aria-label="選擇要看的行程">
+      <span>今天看：</span>
+      <button type="button" data-filter="day1" aria-pressed="true">第一天</button>
+      <button type="button" data-filter="day2" aria-pressed="false">第二天</button>
+      <button type="button" data-filter="all" aria-pressed="false">看全部</button>
+    </div>
+
+    <section class="day" data-day="day1" aria-labelledby="day-one">
       <div class="day-heading">
         <div class="day-number" aria-hidden="true">DAY 1</div>
         <div><h2 id="day-one">老城散步・夜晚小吃</h2><p>府城巷弄裡，邊走邊吃</p></div>
       </div>
       <div class="timeline" aria-label="第一天行程時間軸">
-        <article class="timeline-item"><time class="timeline-time">10:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>富盛號</h3><div class="place">📍 臺南市中西區民族路三段11號</div><p>民國36年創立的傳統碗粿店，配魚羹一起吃很對味。</p><p class="tip"><strong>小提醒：</strong>週四公休，營業時間 07:00–17:00，熱門時段可能排隊。</p><div class="between">步行約 10 分鐘</div></div></article>
-        <article class="timeline-item"><time class="timeline-time">12:00</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>林百貨</h3><div class="place">📍 臺南市中西區忠義路二段63號</div><p>逛逛日治時期老百貨，搭電梯上頂樓看鳥居神社與城市風景。</p><p class="tip"><strong>小提醒：</strong>每日 11:00–21:00 開放，免門票；想慢慢逛可預留一小時。</p><div class="between">搭車約 20 分鐘</div></div></article>
-        <article class="timeline-item"><time class="timeline-time">15:00</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>安平樹屋</h3><div class="place">📍 臺南市安平區古堡街108號旁</div><p>走上木棧道穿梭榕樹與老倉庫，感受安平特有的屋樹共生。</p><p class="tip"><strong>小提醒：</strong>每日 08:30–17:30，成人全票70元；午後戶外記得防曬。</p><div class="between">回市區約 25 分鐘</div></div></article>
-        <article class="timeline-item"><time class="timeline-time">18:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>尋真阿霞飯店</h3><div class="place">📍 臺南市中西區忠義路二段84巷7號</div><p>用四代傳承的府城手路菜，替第一天晚餐留一個正式的句點。</p><p class="tip"><strong>小提醒：</strong>週二至週日 11:00–14:00、17:00–21:00，週一公休；紅蟳米糕建議先預訂。</p></div></article>
+        <article class="timeline-item" data-stop-id="day1-1"><time class="timeline-time">10:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>富盛號 <label class="stop-check"><input type="checkbox" data-stop="day1-1">完成</label></h3><div class="place">📍 臺南市中西區民族路三段11號</div><p>民國36年創立的傳統碗粿店，配魚羹一起吃很對味。</p><p class="tip"><strong>小提醒：</strong>週四公休，營業時間 07:00–17:00，熱門時段可能排隊。</p><div class="between">步行約 10 分鐘</div></div></article>
+        <article class="timeline-item" data-stop-id="day1-2"><time class="timeline-time">12:00</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>林百貨 <label class="stop-check"><input type="checkbox" data-stop="day1-2">完成</label></h3><div class="place">📍 臺南市中西區忠義路二段63號</div><p>逛逛日治時期老百貨，搭電梯上頂樓看鳥居神社與城市風景。</p><p class="tip"><strong>小提醒：</strong>每日 11:00–21:00 開放，免門票；想慢慢逛可預留一小時。</p><div class="between">搭車約 20 分鐘</div></div></article>
+        <article class="timeline-item" data-stop-id="day1-3"><time class="timeline-time">15:00</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>安平樹屋 <label class="stop-check"><input type="checkbox" data-stop="day1-3">完成</label></h3><div class="place">📍 臺南市安平區古堡街108號旁</div><p>走上木棧道穿梭榕樹與老倉庫，感受安平特有的屋樹共生。</p><p class="tip"><strong>小提醒：</strong>每日 08:30–17:30，成人全票70元；午後戶外記得防曬。</p><div class="between">回市區約 25 分鐘</div></div></article>
+        <article class="timeline-item" data-stop-id="day1-4"><time class="timeline-time">18:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>尋真阿霞飯店 <label class="stop-check"><input type="checkbox" data-stop="day1-4">完成</label></h3><div class="place">📍 臺南市中西區忠義路二段84巷7號</div><p>用四代傳承的府城手路菜，替第一天晚餐留一個正式的句點。</p><p class="tip"><strong>小提醒：</strong>週二至週日 11:00–14:00、17:00–21:00，週一公休；紅蟳米糕建議先預訂。</p></div></article>
       </div>
     </section>
 
-    <section class="day" aria-labelledby="day-two">
+    <section class="day" data-day="day2" aria-labelledby="day-two">
       <div class="day-heading">
         <div class="day-number" aria-hidden="true">DAY 2</div>
         <div><h2 id="day-two">早午餐・河岸收尾</h2><p>睡飽再出發，帶著好心情回家</p></div>
       </div>
       <div class="timeline" aria-label="第二天行程時間軸">
-        <article class="timeline-item"><time class="timeline-time">09:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>阿松割包</h3><div class="place">📍 臺南市中西區國華街三段181號</div><p>用一顆台南人熟悉的割包開啟第二天，豬舌包很值得一試。</p><p class="tip"><strong>小提醒：</strong>週一至週日 08:00–18:00、週四休息，早點到比較不怕撲空。</p><div class="between">步行約 10 分鐘</div></div></article>
-        <article class="timeline-item"><time class="timeline-time">11:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>神農街</h3><div class="place">📍 臺南市中西區神農街</div><p>沿著五條港舊河港入口散步，慢慢逛文創小店與老街屋。</p><p class="tip"><strong>小提醒：</strong>街道全天可走，但各店家營業時間不同；部分店內不開放拍照。</p><div class="between">搭車約 15 分鐘</div></div></article>
-        <article class="timeline-item"><time class="timeline-time">14:00</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>河樂廣場</h3><div class="place">📍 臺南市中西區中正路343號</div><p>在原中國城舊址的親水公園吹風，看保留下來的城市歷史痕跡。</p><p class="tip"><strong>小提醒：</strong>週二休息，其餘 09:00–22:00；戲水與拍照時留意地面濕滑。</p></div></article>
+        <article class="timeline-item" data-stop-id="day2-1"><time class="timeline-time">09:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>阿松割包 <label class="stop-check"><input type="checkbox" data-stop="day2-1">完成</label></h3><div class="place">📍 臺南市中西區國華街三段181號</div><p>用一顆台南人熟悉的割包開啟第二天，豬舌包很值得一試。</p><p class="tip"><strong>小提醒：</strong>週一至週日 08:00–18:00、週四休息，早點到比較不怕撲空。</p><div class="between">步行約 10 分鐘</div></div></article>
+        <article class="timeline-item" data-stop-id="day2-2"><time class="timeline-time">11:30</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>神農街 <label class="stop-check"><input type="checkbox" data-stop="day2-2">完成</label></h3><div class="place">📍 臺南市中西區神農街</div><p>沿著五條港舊河港入口散步，慢慢逛文創小店與老街屋。</p><p class="tip"><strong>小提醒：</strong>街道全天可走，但各店家營業時間不同；部分店內不開放拍照。</p><div class="between">搭車約 15 分鐘</div></div></article>
+        <article class="timeline-item" data-stop-id="day2-3"><time class="timeline-time">14:00</time><span class="timeline-mark" aria-hidden="true"></span><div class="timeline-content"><h3>河樂廣場 <label class="stop-check"><input type="checkbox" data-stop="day2-3">完成</label></h3><div class="place">📍 臺南市中西區中正路343號</div><p>在原中國城舊址的親水公園吹風，看保留下來的城市歷史痕跡。</p><p class="tip"><strong>小提醒：</strong>週二休息，其餘 09:00–22:00；戲水與拍照時留意地面濕滑。</p></div></article>
       </div>
     </section>
 
@@ -139,5 +193,98 @@
     </figure>
     <footer>店家、營業時間與交通時間皆為示意，記得出發前確認最新資訊。</footer>
   </main>
+  <script>
+    (() => {
+      const key = "tainan-trip-progress-v1";
+      const buttons = [...document.querySelectorAll("[data-filter]")];
+      const days = [...document.querySelectorAll(".day[data-day]")];
+      const checks = [...document.querySelectorAll("input[data-stop]")];
+      const todayTime = document.querySelector(".today-time");
+      const todayName = document.querySelector(".today-name");
+      const todayDescription = document.querySelector(".today-card p");
+      let state = { filter: "day1", done: {} };
+      try { state = { ...state, ...JSON.parse(localStorage.getItem(key) || "{}") }; } catch (error) {}
+      if (!["day1", "day2", "all"].includes(state.filter)) state.filter = "day1";
+
+      const save = () => localStorage.setItem(key, JSON.stringify(state));
+      const updateTodayCard = (filter) => {
+        const day = days.find((item) => item.dataset.day === (filter === "all" ? "day1" : filter));
+        const first = day?.querySelector(".timeline-item");
+        if (!first) return;
+        todayTime.textContent = first.querySelector(".timeline-time").textContent;
+        todayName.textContent = first.querySelector("h3").childNodes[0].textContent.trim();
+        const place = first.querySelector(".place").textContent.replace(/^📍\s*/, "");
+        const description = first.querySelector(".timeline-content > p:not(.tip)").textContent;
+        todayDescription.textContent = `${place}　／　${description}`;
+      };
+      const setFilter = (filter) => {
+        state.filter = filter;
+        days.forEach((day) => { day.hidden = filter !== "all" && day.dataset.day !== filter; });
+        buttons.forEach((button) => { button.setAttribute("aria-pressed", String(button.dataset.filter === filter)); });
+        updateTodayCard(filter);
+        save();
+      };
+      buttons.forEach((button) => button.addEventListener("click", () => setFilter(button.dataset.filter)));
+      checks.forEach((check) => {
+        check.checked = Boolean(state.done[check.dataset.stop]);
+        check.closest(".timeline-item").classList.toggle("is-done", check.checked);
+        check.addEventListener("change", () => {
+          state.done[check.dataset.stop] = check.checked;
+          check.closest(".timeline-item").classList.toggle("is-done", check.checked);
+          save();
+        });
+      });
+      setFilter(state.filter);
+    })();
+
+    (() => {
+      const supabaseUrl = "https://jqmnfadhcltxxfsquypd.supabase.co";
+      const publishableKey = "sb_publishable_qMsCc5IKNrFEckSqLkBc8Q_Aal8FYb2";
+      const endpoint = `${supabaseUrl}/rest/v1/dinner_votes`;
+      const form = document.querySelector("#vote-form");
+      const status = document.querySelector("#vote-status");
+      const submit = form.querySelector(".vote-submit");
+      const results = document.querySelector("#vote-results-list");
+      const choices = ["牛肉湯", "海鮮粥", "素食餐"];
+      const headers = { apikey: publishableKey, Authorization: `Bearer ${publishableKey}` };
+
+      const showResults = (rows) => {
+        const counts = Object.fromEntries(choices.map((choice) => [choice, 0]));
+        rows.forEach((row) => { if (counts[row.choice] !== undefined) counts[row.choice] += 1; });
+        results.innerHTML = choices.map((choice) => `<li><span>${choice}</span><strong>${counts[choice]} 票</strong></li>`).join("");
+      };
+      const loadResults = async () => {
+        try {
+          const response = await fetch(`${endpoint}?select=choice`, { headers });
+          if (!response.ok) throw new Error("讀取失敗");
+          showResults(await response.json());
+        } catch (error) {
+          status.textContent = "目前無法讀取票數，請稍後再試。";
+        }
+      };
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        submit.disabled = true;
+        status.textContent = "送出中⋯";
+        const data = new FormData(form);
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify({ nickname: String(data.get("nickname")).trim(), choice: data.get("choice") })
+          });
+          if (!response.ok) throw new Error("投票失敗");
+          form.reset();
+          status.textContent = "投票成功，謝謝你！";
+          await loadResults();
+        } catch (error) {
+          status.textContent = "投票失敗，請稍後再試。";
+        } finally {
+          submit.disabled = false;
+        }
+      });
+      loadResults();
+    })();
+  </script>
 </body>
 </html>
