@@ -34,6 +34,10 @@
     header { padding: 25px 4px 23px; }
     h1 { margin: 12px 0 7px; font-family: "Kaiti TC", "BiauKai", "DFKai-SB", "KaiTi", serif; font-size: clamp(38px, 10vw, 58px); line-height: 1.18; letter-spacing: .04em; }
     .subtitle { margin: 0; color: var(--muted); font-size: 16px; }
+    .meeting-point { margin: 12px 0 0; color: var(--green); font-size: 16px; font-weight: 700; }
+    .site-qr { width: fit-content; max-width: 100%; margin: 24px auto 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); text-align: center; }
+    .site-qr img { display: block; width: min(180px, 55vw); height: auto; margin: 0 auto; }
+    .site-qr figcaption { margin-top: 8px; color: var(--muted); font-size: 14px; }
     .today-card { position: relative; margin: 0 0 18px; padding: 17px 18px 18px; border: 1.5px dashed #c98d69; border-radius: 18px 14px 20px 14px; background: #fff8ec; box-shadow: 0 7px 18px rgba(105, 76, 47, .08); }
     .today-label { display: flex; align-items: center; gap: 7px; color: #9a573e; font-size: 13px; font-weight: 800; letter-spacing: .08em; }
     .today-card h2 { margin: 7px 0 3px; font-family: "Kaiti TC", "BiauKai", "DFKai-SB", "KaiTi", serif; font-size: 24px; line-height: 1.35; }
@@ -85,6 +89,7 @@
     <header>
       <h1>小旅行筆記</h1>
       <p class="subtitle">台南兩天一夜・留點時間散步，和朋友慢慢玩。</p>
+      <p class="meeting-point">集合地點：台南火車站前站</p>
     </header>
 
     <aside class="today-card" aria-label="今天的第一站">
@@ -123,6 +128,10 @@
       </div>
     </section>
 
+    <figure class="site-qr">
+      <img src="./tainan-trip-qr.png" alt="掃描 QR Code 開啟台南兩天一夜行程" width="180" height="180">
+      <figcaption>掃描 QR Code 開啟行程</figcaption>
+    </figure>
     <footer>店家、營業時間與交通時間皆為示意，記得出發前確認最新資訊。</footer>
   </main>
 </body>
