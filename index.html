@@ -91,7 +91,15 @@
     .vote-results h3 { margin: 0 0 8px; color: var(--green); font-size: 15px; }
     .vote-results ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
     .vote-results li { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; }
-    .vote-results strong { color: var(--ink); font-weight: 700; }    @media (max-width: 380px) {
+    .vote-results strong { color: var(--ink); font-weight: 700; }    .vote-loading, .vote-error { margin: 0 0 24px; padding: 18px; border: 1px solid var(--line); border-radius: 17px; background: var(--card); color: var(--muted); }
+    .poll-ended-title { margin: 0; color: var(--green); font-size: 20px; font-weight: 750; }
+    .host-panel { margin-top: 12px; }
+    .host-panel h3 { margin: 0 0 12px; color: var(--green); font-size: 17px; }
+    .host-form { display: grid; gap: 11px; }
+    .host-form label { color: var(--green); font-size: 14px; font-weight: 650; }
+    .host-form input[type="password"] { box-sizing: border-box; width: 100%; margin-top: 5px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font: inherit; }
+    .host-form button { min-height: 44px; border: 1px solid var(--line); border-radius: 11px; background: var(--soft-green); color: var(--green); font: inherit; font-weight: 700; cursor: pointer; }
+    .host-form button:disabled { opacity: .6; cursor: wait; }    @media (max-width: 380px) {
       .page { width: min(100% - 24px, 620px); padding-top: 18px; }
       .hero { min-height: 300px; padding: 24px 19px 22px; }
       .hero-content { max-width: 72%; }
@@ -158,7 +166,12 @@
     </section>
     <section class="day" aria-labelledby="dinner-vote-title">
       <div class="day-heading"><h2 id="dinner-vote-title">晚餐投票</h2><span>選擇今晚想吃的</span></div>
-      <div class="vote-card">
+      <div class="vote-loading" id="poll-loading" role="status" aria-live="polite">正在確認投票狀態…</div>
+      <div class="vote-error" id="poll-load-error" role="alert" hidden>
+        目前無法確認投票狀態，因此暫時不能投票。
+        <button class="host-retry" id="poll-retry" type="button">重新讀取</button>
+      </div>
+      <div class="vote-card" id="poll-open-view" hidden>
         <form class="vote-form" id="dinner-vote-form">
           <label for="dinner-nickname">你的暱稱
             <input id="dinner-nickname" name="nickname" type="text" maxlength="40" autocomplete="nickname" required>
@@ -177,6 +190,23 @@
           <ul id="dinner-vote-results"><li>讀取中…</li></ul>
         </div>
       </div>
+      <div class="vote-card" id="poll-closed-view" hidden>
+        <p class="poll-ended-title">投票已結束</p>
+        <div class="vote-results">
+          <h3>各選項票數</h3>
+          <ul id="dinner-vote-final-results"><li>讀取中…</li></ul>
+        </div>
+      </div>
+      <div class="vote-card host-panel" id="poll-host-panel" hidden>
+        <h3>結束投票（主揪用）</h3>
+        <form class="host-form" id="poll-close-form">
+          <label for="poll-passphrase">主揪密語
+            <input id="poll-passphrase" name="secret" type="password" autocomplete="current-password" maxlength="1024" required>
+          </label>
+          <button id="poll-close-submit" type="submit">結束投票</button>
+          <p class="vote-status" id="poll-close-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
     </section>
     <p class="footer">行程中的店名與時間皆為示意，出發前再換成實際安排。</p>
   </main>
@@ -184,20 +214,30 @@
 (() => {
   const supabaseUrl = "https://rmkgwvpppiguskbbtpkg.supabase.co";
   const publicKey = "sb_publishable_Bkq8sGofrlKxKOZMFSllMQ_qcM_plgA";
-  const endpoint = supabaseUrl + "/rest/v1/dinner_votes";
-  const choices = ["牛肉湯", "海鮮粥", "素食餐"];
   const headers = { apikey: publicKey, Authorization: "Bearer " + publicKey };
+  const choices = ["牛肉湯", "海鮮粥", "素食餐"];
+  const votesEndpoint = supabaseUrl + "/rest/v1/dinner_votes";
+  const stateEndpoint = supabaseUrl + "/rest/v1/poll_status?select=is_closed&singleton=eq.true";
+  const closeEndpoint = supabaseUrl + "/functions/v1/close-poll";
+  const loading = document.querySelector("#poll-loading");
+  const loadError = document.querySelector("#poll-load-error");
+  const openView = document.querySelector("#poll-open-view");
+  const closedView = document.querySelector("#poll-closed-view");
+  const hostPanel = document.querySelector("#poll-host-panel");
   const form = document.querySelector("#dinner-vote-form");
-  const status = document.querySelector("#dinner-vote-status");
-  const list = document.querySelector("#dinner-vote-results");
-  const button = form.querySelector(".vote-submit");
+  const voteStatus = document.querySelector("#dinner-vote-status");
+  const voteButton = form.querySelector(".vote-submit");
+  const hostForm = document.querySelector("#poll-close-form");
+  const hostStatus = document.querySelector("#poll-close-status");
+  const hostButton = document.querySelector("#poll-close-submit");
+  let pollClosed = null;
 
-  function renderVotes(rows) {
+  function renderVotes(rows, target) {
     const counts = new Map(choices.map((choice) => [choice, 0]));
     rows.forEach((row) => {
       if (counts.has(row.option)) counts.set(row.option, counts.get(row.option) + 1);
     });
-    list.replaceChildren();
+    target.replaceChildren();
     counts.forEach((count, option) => {
       const item = document.createElement("li");
       const label = document.createElement("span");
@@ -205,49 +245,119 @@
       label.textContent = option;
       value.textContent = count + " 票";
       item.append(label, value);
-      list.append(item);
+      target.append(item);
     });
   }
 
-  async function refreshVotes() {
+  async function loadVotes(target) {
+    const response = await fetch(votesEndpoint + "?select=option", { headers });
+    if (!response.ok) throw new Error("vote counts unavailable");
+    renderVotes(await response.json(), target);
+  }
+
+  async function refreshPollState() {
+    loading.hidden = false;
+    loadError.hidden = true;
+    openView.hidden = true;
+    closedView.hidden = true;
+    hostPanel.hidden = true;
+    pollClosed = null;
     try {
-      const response = await fetch(endpoint + "?select=option", { headers });
-      if (!response.ok) throw new Error("read failed");
-      renderVotes(await response.json());
+      const response = await fetch(stateEndpoint, { headers });
+      if (!response.ok) throw new Error("poll status unavailable");
+      const rows = await response.json();
+      if (rows.length !== 1 || typeof rows[0].is_closed !== "boolean") {
+        throw new Error("invalid poll status");
+      }
+      pollClosed = rows[0].is_closed;
+      loading.hidden = true;
+      if (pollClosed) {
+        closedView.hidden = false;
+        await loadVotes(document.querySelector("#dinner-vote-final-results"));
+      } else {
+        openView.hidden = false;
+        hostPanel.hidden = false;
+        await loadVotes(document.querySelector("#dinner-vote-results"));
+      }
     } catch {
-      status.textContent = "目前無法讀取票數，請稍後再試。";
+      loading.hidden = true;
+      openView.hidden = true;
+      closedView.hidden = true;
+      hostPanel.hidden = true;
+      loadError.hidden = false;
     }
   }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (pollClosed !== false) {
+      voteStatus.textContent = "目前無法確認投票仍開放，請重新讀取。";
+      return;
+    }
     const data = new FormData(form);
     const nickname = String(data.get("nickname") || "").trim();
     const option = String(data.get("option") || "");
     if (!nickname || !choices.includes(option)) {
-      status.textContent = "請填暱稱並選擇一個選項。";
+      voteStatus.textContent = "請填暱稱並選擇一個選項。";
       return;
     }
-    button.disabled = true;
-    status.textContent = "送出中…";
+    voteButton.disabled = true;
+    voteStatus.textContent = "送出中…";
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(votesEndpoint, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
         body: JSON.stringify({ nickname, option })
       });
       if (!response.ok) throw new Error("vote failed");
       form.reset();
-      status.textContent = "投票成功，謝謝你！";
-      await refreshVotes();
+      voteStatus.textContent = "投票成功，謝謝你！";
+      await refreshPollState();
     } catch {
-      status.textContent = "投票失敗，請稍後再試。";
+      voteStatus.textContent = "投票未成功，請稍後再試。";
+      await refreshPollState();
     } finally {
-      button.disabled = false;
+      voteButton.disabled = false;
     }
   });
 
-  refreshVotes();
+  hostForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (pollClosed !== false) {
+      hostStatus.textContent = "目前無法確認投票仍開放，請重新讀取。";
+      return;
+    }
+    const secret = String(new FormData(hostForm).get("secret") || "");
+    if (!secret) {
+      hostStatus.textContent = "請輸入主揪密語。";
+      return;
+    }
+    hostButton.disabled = true;
+    hostStatus.textContent = "正在確認密語…";
+    try {
+      const response = await fetch(closeEndpoint, {
+        method: "POST",
+        headers: { apikey: publicKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ secret })
+      });
+      hostForm.reset();
+      if (response.status === 401) {
+        hostStatus.textContent = "密語不正確，投票仍開放。";
+        return;
+      }
+      if (!response.ok) throw new Error("close request failed");
+      hostStatus.textContent = "投票已結束。";
+      await refreshPollState();
+    } catch {
+      hostForm.reset();
+      hostStatus.textContent = "目前無法結束投票，請稍後再試。";
+    } finally {
+      hostButton.disabled = false;
+    }
+  });
+
+  document.querySelector("#poll-retry").addEventListener("click", refreshPollState);
+  refreshPollState();
 })();
 </script>
 </body>
